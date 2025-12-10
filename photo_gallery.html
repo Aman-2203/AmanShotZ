@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Fixed Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px 40px;
+            animation: slideDown 0.6s ease;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #ffffff 0%, #888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+
+        .photo-count {
+            color: #888;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+
+        .featured-header {
+            max-width: 1800px;
+            margin-top: 100px;
+            padding: 0 20px;
+            margin-bottom: 24px;
+        }
+
+        .featured-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #6366f1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .featured-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.5), transparent);
+        }
+
+        .featured-scroll {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 20px;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .featured-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .featured-item {
+            flex: 0 0 auto;
+            width: 280px;
+            height: 380px;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            scroll-snap-align: start;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .featured-item:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.4);
+        }
+
+        .featured-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+
+        .featured-item:hover img {
+            transform: scale(1.1);
+        }
+
+        .featured-item::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.8) 100%);
+            z-index: 1;
+        }
+
+        .featured-item::after {
+            content: '★ FEATURED';
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            z-index: 2;
+        }
+
+        .featured-number {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 48px;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.9);
+            z-index: 2;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Masonry Gallery */
+        .gallery {
+            column-count: 4;
+            column-gap: 20px;
+            opacity: 0;
+            animation: fadeIn 0.8s ease 0.3s forwards;
+        }
+
+        .gallery.grid-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            column-count: initial;
+        }
+
+        .gallery-item {
+            break-inside: avoid;
+            margin-bottom: 20px;
+            position: relative;
+            cursor: pointer;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #0f0f0f;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            /* Scroll reveal - start hidden */
+            opacity: 0;
+            transform: translateY(60px) rotateX(10deg);
+        }
+
+        .gallery-item.revealed {
+            opacity: 1;
+            transform: translateY(0) rotateX(0);
+        }
+
+        .gallery.grid-view .gallery-item {
+            aspect-ratio: 4/3;
+        }
+
+        .gallery-item::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(139, 92, 246, 0.4));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 2;
+        }
+
+        .gallery-item:hover::before {
+            opacity: 1;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            display: block;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .gallery.grid-view .gallery-item img {
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Image Overlay */
+        .image-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+            transform: translateY(100%);
+            transition: transform 0.4s ease;
+            z-index: 3;
+        }
+
+        .gallery-item:hover .image-overlay {
+            transform: translateY(0);
+        }
+
+        .image-number {
+            font-size: 12px;
+            font-weight: 700;
+            color: #6366f1;
+            letter-spacing: 0.1em;
+        }
+
+        /* Loading Skeleton */
+        .gallery-item.loading {
+            background: linear-gradient(90deg, #0f0f0f 25%, #1a1a1a 50%, #0f0f0f 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* Viewer Modal */
+        .viewer {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.97);
+            backdrop-filter: blur(30px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Ambient Blur Background */
+        .ambient-blur {
+            position: fixed;
+            inset: -100px;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            filter: blur(150px) saturate(1.5);
+        }
+
+        .ambient-blur.active {
+            opacity: 0.4;
+        }
+
+        .ambient-blur-layer {
+            position: absolute;
+            border-radius: 50%;
+            animation: ambientFloat 8s ease-in-out infinite;
+        }
+
+        .ambient-blur-layer:nth-child(1) {
+            width: 60%;
+            height: 60%;
+            top: 10%;
+            left: 5%;
+            animation-delay: 0s;
+        }
+
+        .ambient-blur-layer:nth-child(2) {
+            width: 50%;
+            height: 50%;
+            bottom: 10%;
+            right: 5%;
+            animation-delay: -4s;
+        }
+
+        .ambient-blur-layer:nth-child(3) {
+            width: 40%;
+            height: 40%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -2s;
+        }
+
+        @keyframes ambientFloat {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            25% {
+                transform: translate(5%, 5%) scale(1.1);
+            }
+
+            50% {
+                transform: translate(-5%, 10%) scale(0.95);
+            }
+
+            75% {
+                transform: translate(10%, -5%) scale(1.05);
+            }
+        }
+
+        .viewer.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .viewer-content {
+            position: relative;
+            max-width: 95vw;
+            max-height: 95vh;
+        }
+
+        .viewer.active .viewer-content {
+            animation: zoomIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .viewer-image-container {
+            position: relative;
+        }
+
+        .viewer img {
+            max-width: 90vw;
+            max-height: 85vh;
+            border-radius: 8px;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9);
+        }
+
+        /* Viewer Controls */
+        .viewer-controls {
+            position: absolute;
+            top: -60px;
+            right: 0;
+            display: flex;
+            gap: 12px;
+        }
+
+        .viewer-btn {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .viewer-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .close-btn:hover {
+            background: rgba(239, 68, 68, 0.9);
+            border-color: rgba(239, 68, 68, 1);
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        /* Navigation */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 10;
+        }
+
+        .nav-btn:hover {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-color: rgba(99, 102, 241, 0.8);
+            transform: translateY(-50%) scale(1.15);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        .prev-btn {
+            left: -80px;
+        }
+
+        .next-btn {
+            right: -80px;
+        }
+
+        /* Image Info */
+        .image-info {
+            position: absolute;
+            bottom: -60px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .counter {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .current {
+            color: #6366f1;
+            font-size: 18px;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: 1px solid rgba(99, 102, 241, 0.5);
+            padding: 12px 24px;
+            border-radius: 24px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Animations */
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .gallery {
+                column-count: 3;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 12px 16px;
+                backdrop-filter: blur(15px);
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            /* Featured Section Mobile */
+            .featured-section {
+                padding: 80px 0 20px;
+            }
+
+            .featured-header {
+                margin-top: 60px;
+                padding: 0 16px;
+                margin-bottom: 16px;
+            }
+
+            .featured-item {
+                width: 220px;
+                height: 300px;
+            }
+
+            .featured-number {
+                font-size: 32px;
+                bottom: 16px;
+                left: 16px;
+            }
+
+            /* Gallery Mobile */
+            .gallery {
+                column-count: 2;
+                column-gap: 12px;
+            }
+
+            .gallery-item {
+                margin-bottom: 12px;
+            }
+
+            main {
+                padding: 20px 12px;
+            }
+
+            .controls {
+                gap: 8px;
+            }
+
+            .photo-count {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+
+            .view-toggle {
+                display: none;
+            }
+
+            /* Viewer Mobile Optimizations */
+            .nav-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+                background: rgba(0, 0, 0, 0.5);
+                /* Stronger contrast */
+            }
+
+            .prev-btn {
+                left: 10px;
+            }
+
+            .next-btn {
+                right: 10px;
+            }
+
+            .viewer-controls {
+                top: 16px;
+                right: 16px;
+            }
+
+            .viewer-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .image-info {
+                bottom: 20px;
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+                padding: 0 20px;
+            }
+
+            .counter {
+                font-size: 12px;
+                padding: 8px 16px;
+                background: rgba(0, 0, 0, 0.6);
+            }
+
+            .download-btn {
+                font-size: 12px;
+                padding: 10px 20px;
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .gallery {
+                column-count: 1;
+                /* Single column for better visibility on small phones */
+            }
+
+            .featured-item {
+                width: 75vw;
+                /* Make featured items wider on phone */
+                height: 120vw;
+                /* Taller aspect ratio */
+            }
+
+            .featured-scroll {
+                padding: 0 16px;
+                /* Align with header padding */
+                scroll-padding: 0 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Gallery</h1>
+            <div class="controls">
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="masonry">Masonry</button>
+                    <button class="view-btn" data-view="grid">Grid</button>
+                </div>
+                <div class="photo-count">
+                    <span class="count-num" id="photoCount">0</span> photos
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Featured Photos Header -->
+    <section class="featured-section">
+        <div class="featured-header">
+            <h2 class="featured-title">Featured Photos</h2>
+        </div>
+        <div id="featuredScroll" class="featured-scroll"></div>
+    </section>
+
+    <main>
+        <div id="gallery" class="gallery"></div>
+    </main>
+
+    <!-- Ambient Blur Background -->
+    <div id="ambientBlur" class="ambient-blur">
+        <div class="ambient-blur-layer"></div>
+        <div class="ambient-blur-layer"></div>
+        <div class="ambient-blur-layer"></div>
+    </div>
+
+    <!-- Viewer Modal -->
+    <div id="viewer" class="viewer">
+        <div class="viewer-content">
+            <div class="viewer-controls">
+                <button class="viewer-btn fullscreen-btn" id="fullscreenBtn" title="Fullscreen">⛶</button>
+                <button class="viewer-btn close-btn" id="closeBtn" title="Close">×</button>
+            </div>
+
+            <div class="viewer-image-container">
+                <img id="viewerImg" src="" alt="Enlarged view">
+                <button class="nav-btn prev-btn" id="prevBtn">‹</button>
+                <button class="nav-btn next-btn" id="nextBtn">›</button>
+            </div>
+
+            <div class="image-info">
+                <div class="counter">
+                    <span class="current" id="currentNum">1</span> / <span id="totalNum">0</span>
+                </div>
+                <button class="download-btn" id="downloadBtn">
+                    <span>↓</span> Download
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ImageKit Configuration
+        const IK_BASE_URL = "https://ik.imagekit.io/Aman2203/photos/";
+        const THUMB_PARAMS = "?tr=w-600"; // Optimize for 280-300px display width (2x density)
+        const FULL_PARAMS = "?tr=w-1600"; // High quality for viewer
+
+        // Top 10 featured photos (user-curated) - displayed in header
+        const featuredPhotos = [
+            'photo9.jpg',
+            'photo11.jpg',
+            'photo53.jpg',
+            'photo56.jpg',
+            'photo75.jpg',
+            'photo49.jpg',
+            'photo26.jpg',
+            'photo4.jpg',
+            'photo80.jpg',
+            'photo12.jpg'
+        ];
+
+        // Generate remaining photos (exclude featured ones)
+        const remainingPhotos = [];
+        for (let i = 1; i <= 80; i++) {
+            const name = `photo${i}.jpg`;
+            if (!featuredPhotos.includes(name)) {
+                remainingPhotos.push(name);
+            }
+        }
+
+        // Shuffle remaining photos (Fisher-Yates)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        shuffleArray(remainingPhotos);
+
+        // All photos for viewer navigation (featured first, then shuffled rest)
+        const allPhotos = [...featuredPhotos, ...remainingPhotos];
+
+        const featuredScroll = document.getElementById("featuredScroll");
+        const gallery = document.getElementById("gallery");
+        const viewer = document.getElementById("viewer");
+        const viewerImg = document.getElementById("viewerImg");
+        const closeBtn = document.getElementById("closeBtn");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const currentNum = document.getElementById("currentNum");
+        const totalNum = document.getElementById("totalNum");
+        const photoCount = document.getElementById("photoCount");
+        const downloadBtn = document.getElementById("downloadBtn");
+        const fullscreenBtn = document.getElementById("fullscreenBtn");
+        const viewBtns = document.querySelectorAll(".view-btn");
+
+        let currentIndex = 0;
+
+        // Update counts
+        photoCount.textContent = allPhotos.length;
+        totalNum.textContent = allPhotos.length;
+
+        // Load Featured Photos (horizontal header)
+        featuredPhotos.forEach((imgName, index) => {
+            const item = document.createElement("div");
+            item.className = "featured-item";
+
+            const img = document.createElement("img");
+            // Use optimized thumbnail for list
+            img.src = IK_BASE_URL + imgName + THUMB_PARAMS;
+            img.alt = `Featured Photo ${index + 1}`;
+            img.loading = "lazy";
+
+            const number = document.createElement("div");
+            number.className = "featured-number";
+            number.textContent = String(index + 1).padStart(2, '0');
+
+            item.onclick = () => openViewer(index);
+            item.appendChild(img);
+            item.appendChild(number);
+            featuredScroll.appendChild(item);
+        });
+
+        // Load remaining photos in masonry gallery
+        remainingPhotos.forEach((imgName, index) => {
+            const globalIndex = featuredPhotos.length + index; // offset for viewer
+            const item = document.createElement("div");
+            item.className = "gallery-item loading";
+
+            const img = document.createElement("img");
+            img.dataset.index = globalIndex;
+            img.alt = `Photo ${globalIndex + 1}`;
+            img.loading = "lazy";
+
+            img.onload = () => {
+                item.classList.remove("loading");
+            };
+
+            // Use optimized thumbnail for list
+            img.src = IK_BASE_URL + imgName + THUMB_PARAMS;
+
+            const overlay = document.createElement("div");
+            item.className = "gallery-item loading"; // Reset class just in case
+            overlay.className = "image-overlay";
+            overlay.innerHTML = `<div class="image-number">#${String(index + 1).padStart(2, '0')}</div>`;
+
+            // 3D Tilt Effect on hover
+            item.addEventListener('mousemove', (e) => {
+                const rect = item.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = (y - centerY) / 10;
+                const rotateY = (centerX - x) / 10;
+
+                item.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+            });
+
+            item.addEventListener('mouseleave', () => {
+                item.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+            });
+
+            item.onclick = () => openViewer(globalIndex);
+            item.appendChild(img);
+            item.appendChild(overlay);
+            gallery.appendChild(item);
+        });
+
+        // View toggle
+        viewBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                viewBtns.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+
+                if (btn.dataset.view === "grid") {
+                    gallery.classList.add("grid-view");
+                } else {
+                    gallery.classList.remove("grid-view");
+                }
+            });
+        });
+
+        // Ambient blur element
+        const ambientBlur = document.getElementById('ambientBlur');
+        const blurLayers = ambientBlur.querySelectorAll('.ambient-blur-layer');
+
+        // Extract dominant colors from image
+        function extractColors(img) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 50;
+            canvas.height = 50;
+
+            try {
+                ctx.drawImage(img, 0, 0, 50, 50);
+                const imageData = ctx.getImageData(0, 0, 50, 50).data;
+
+                // Sample colors from different regions
+                const colors = [];
+                const positions = [
+                    { x: 10, y: 10 }, // top-left
+                    { x: 40, y: 40 }, // bottom-right
+                    { x: 25, y: 25 }  // center
+                ];
+
+                positions.forEach(pos => {
+                    const idx = (pos.y * 50 + pos.x) * 4;
+                    colors.push(`rgba(${imageData[idx]}, ${imageData[idx + 1]}, ${imageData[idx + 2]}, 0.8)`);
+                });
+
+                return colors;
+            } catch (e) {
+                return ['rgba(99, 102, 241, 0.8)', 'rgba(139, 92, 246, 0.8)', 'rgba(168, 85, 247, 0.8)'];
+            }
+        }
+
+        function updateAmbientBlur(img) {
+            const colors = extractColors(img);
+            blurLayers.forEach((layer, i) => {
+                layer.style.background = colors[i] || colors[0];
+            });
+            ambientBlur.classList.add('active');
+        }
+
+        function openViewer(index) {
+            currentIndex = index;
+            updateViewer();
+            viewer.classList.add("active");
+            document.body.style.overflow = "hidden";
+
+            // Update ambient blur when image loads
+            const tempImg = new Image();
+            tempImg.crossOrigin = 'anonymous';
+            tempImg.onload = () => updateAmbientBlur(tempImg);
+            // Use full quality URL for ambient blur sampling too
+            tempImg.src = IK_BASE_URL + allPhotos[currentIndex] + FULL_PARAMS;
+        }
+
+        function updateViewer() {
+            // Use full quality URL for viewer
+            viewerImg.src = IK_BASE_URL + allPhotos[currentIndex] + FULL_PARAMS;
+            currentNum.textContent = currentIndex + 1;
+        }
+
+        closeBtn.onclick = () => {
+            viewer.classList.remove("active");
+            ambientBlur.classList.remove('active');
+            document.body.style.overflow = "auto";
+        };
+
+        prevBtn.onclick = () => {
+            currentIndex = (currentIndex - 1 + allPhotos.length) % allPhotos.length;
+            updateViewer();
+        };
+
+        nextBtn.onclick = () => {
+            currentIndex = (currentIndex + 1) % allPhotos.length;
+            updateViewer();
+        };
+
+        // Download functionality
+        downloadBtn.onclick = () => {
+            const link = document.createElement('a');
+            // Download the original quality
+            link.href = IK_BASE_URL + allPhotos[currentIndex];
+            link.download = allPhotos[currentIndex];
+            link.target = "_blank"; // Open in new tab for download if helper doesn't catch it
+            link.click();
+        };
+
+        // Fullscreen
+        fullscreenBtn.onclick = () => {
+            if (!document.fullscreenElement) {
+                viewer.requestFullscreen().catch(err => {
+                    console.log('Fullscreen error:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        };
+
+        // Keyboard navigation
+        document.addEventListener("keydown", (e) => {
+            if (!viewer.classList.contains("active")) return;
+
+            if (e.key === "Escape") closeBtn.onclick();
+            if (e.key === "ArrowLeft") prevBtn.onclick();
+            if (e.key === "ArrowRight") nextBtn.onclick();
+            if (e.key === "f" || e.key === "F") fullscreenBtn.onclick();
+            if (e.key === "d" || e.key === "D") downloadBtn.onclick();
+        });
+
+        // Close on background click
+        viewer.onclick = (e) => {
+            if (e.target === viewer) closeBtn.onclick();
+        };
+
+        // Preload adjacent images for smooth navigation
+        function preloadImages() {
+            const prev = (currentIndex - 1 + allPhotos.length) % allPhotos.length;
+            const next = (currentIndex + 1) % allPhotos.length;
+
+            [prev, next].forEach(idx => {
+                const img = new Image();
+                img.src = IK_BASE_URL + allPhotos[idx] + FULL_PARAMS;
+            });
+        }
+
+        // Preload on viewer open
+        viewer.addEventListener('transitionend', () => {
+            if (viewer.classList.contains('active')) {
+                preloadImages();
+            }
+        });
+
+        // Scroll Reveal Animation with Intersection Observer
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    // Staggered animation delay based on position in view
+                    setTimeout(() => {
+                        entry.target.classList.add('revealed');
+                    }, index * 50);
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        // Observe all gallery items
+        document.querySelectorAll('.gallery-item').forEach(item => {
+            revealObserver.observe(item);
+        });
+    </script>
+</body>
+
+</html>
