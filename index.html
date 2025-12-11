@@ -612,9 +612,8 @@
                 left: 16px;
             }
 
-            /* Gallery Mobile */
             .gallery {
-                column-count: 2;
+                column-count: 3;
                 column-gap: 12px;
             }
 
@@ -636,7 +635,11 @@
             }
 
             .view-toggle {
-                display: none;
+                display: flex;
+            }
+
+            .gallery.grid-view {
+                grid-template-columns: repeat(3, 1fr);
             }
 
             /* Viewer Mobile Optimizations */
@@ -691,8 +694,7 @@
 
         @media (max-width: 480px) {
             .gallery {
-                column-count: 1;
-                /* Single column for better visibility on small phones */
+                column-count: 3;
             }
 
             .featured-item {
